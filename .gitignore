@@ -1,1 +1,5 @@
 .DS_Store
+a2/utils/datasets
+*.npy
+*.pickle
+__pycache__
