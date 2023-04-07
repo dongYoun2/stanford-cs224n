@@ -58,8 +58,8 @@ def naiveSoftmaxLossAndGradient(
     ### This numerically stable implementation helps you avoid issues pertaining
     ### to integer overflow.
 
-    y_hat = np.dot(outsideVectors, centerWordVec)
-    outside_w_prob = softmax(y_hat)[outsideWordIdx]
+    y_hat = softmax(np.dot(outsideVectors, centerWordVec))
+    outside_w_prob = y_hat[outsideWordIdx]
     loss = -np.log(outside_w_prob)
 
     y = np.zeros_like(y_hat)
@@ -114,26 +114,22 @@ def negSamplingLossAndGradient(
     ### YOUR CODE HERE
     ### Please use your implementation of sigmoid in here.
 
-    sampled_y_hat = np.dot(outsideVectors[indices], centerWordVec)
-    loss = -np.sum(np.log(sigmoid(sampled_y_hat)))
+    combined = np.vstack([outsideVectors[outsideWordIdx], -outsideVectors[negSampleWordIndices]])
+    sig_output = sigmoid(np.dot(combined, centerWordVec))
+    loss = -np.sum(np.log(sig_output))
+    
+    temp = sig_output * np.array([1] + [-1] * K) + np.array([-1] + [1] * K)
+    gradCenterVec = np.dot(temp, outsideVectors[indices])   # gradCenterVec = np.dot(outsideVectors[indices].T, temp) 이렇게 해도 동일
 
-    c_for_pos_sample = sigmoid(np.dot(outsideVectors[outsideWordIdx], centerWordVec)) - 1   # always scalar
-    assert np.ndim(c_for_pos_sample) == 0
-
-    if K > 0:
-        c_for_neg_sample = 1 - sigmoid(np.dot(-outsideVectors[negSampleWordIndices], centerWordVec))  # can be scalar or vector depending on K
-        if np.ndim(c_for_neg_sample) == 0:  # K == 1
-            c_for_neg_sample = np.array([c_for_neg_sample])
-        
-        c_vec = np.array([c_for_pos_sample, *c_for_neg_sample])
-    elif K == 0:
-        c_vec = np.array([c_for_pos_sample])
-
-    assert c_vec.shape[0] == 1 + K
-    gradCenterVec = np.dot(c_vec, outsideVectors[indices])
+    assert temp.shape == (K+1, )
+    assert centerWordVec.shape == (outsideVectors.shape[1], )
 
     gradOutsideVecs = np.zeros_like(outsideVectors)
-    gradOutsideVecs[indices] = np.dot(c_vec[:, np.newaxis], centerWordVec[np.newaxis, :])
+    # gradOutsideVecs[indices] = np.dot(temp[:, np.newaxis], centerWordVec[np.newaxis, :])  # this way is only possible when no same word can be negatively sampled.
+
+    # have to do this way b/c of the "Note" in the comment above.
+    for i, w_idx in enumerate(indices):
+        gradOutsideVecs[w_idx] += temp[i] * centerWordVec
 
     ### END YOUR CODE
 
@@ -185,7 +181,7 @@ def skipgram(currentCenterWord, windowSize, outsideWords, word2Ind,
     for o_w_idx in outside_w_indices:
         local_loss, grad_v_c, grad_U = word2vecLossAndGradient(center_w_vec, o_w_idx, outsideVectors, dataset)
         loss += local_loss
-        gradCenterVecs[center_w_idx] = grad_v_c
+        gradCenterVecs[center_w_idx] += grad_v_c
         gradOutsideVectors += grad_U
     ### END YOUR CODE
 
