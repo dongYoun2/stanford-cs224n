@@ -3,3 +3,5 @@ a2/utils/datasets
 *.npy
 *.pickle
 __pycache__
+*.conll
+a3/data/en-cw.txt
