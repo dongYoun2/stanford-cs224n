@@ -5,3 +5,6 @@ a2/utils/datasets
 __pycache__
 *.conll
 a3/data/en-cw.txt
+*pkl
+a4/**/*.en
+a4/**/*.es
