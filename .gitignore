@@ -8,3 +8,4 @@ a3/data/en-cw.txt
 *pkl
 a4/**/*.en
 a4/**/*.es
+a4/**/vocab.json
