@@ -15,6 +15,7 @@ Usage:
 Options:
     -h --help                               show this screen.
     --cuda                                  use GPU
+    --mps                                   use Metal GPU
     --train-src=<file>                      train source file
     --train-tgt=<file>                      train target file
     --dev-src=<file>                        dev source file
@@ -57,6 +58,7 @@ from vocab import Vocab, VocabEntry
 
 import torch
 import torch.nn.utils
+import torch.mps
 
 
 def evaluate_ppl(model, dev_data, batch_size=32):
@@ -138,7 +140,13 @@ def train(args: Dict):
     vocab_mask = torch.ones(len(vocab.tgt))
     vocab_mask[vocab.tgt['<pad>']] = 0
 
-    device = torch.device("cuda:0" if args['--cuda'] else "cpu")
+    if args['--cuda']:
+        device = torch.device("cuda:0")
+    elif args['--mps']:
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
     print('use device: %s' % device, file=sys.stderr)
 
     model = model.to(device)
@@ -276,6 +284,8 @@ def decode(args: Dict[str, str]):
 
     if args['--cuda']:
         model = model.to(torch.device("cuda:0"))
+    elif args['--mps']:
+        model = model.to(torch.device("mps"))
 
     hypotheses = beam_search(model, test_data_src,
                              beam_size=int(args['--beam-size']),
@@ -329,6 +339,9 @@ def main():
     torch.manual_seed(seed)
     if args['--cuda']:
         torch.cuda.manual_seed(seed)
+    elif args['--mps']:
+        torch.mps.manual_seed(seed)
+
     np.random.seed(seed * 13 // 7)
 
     if args['train']:

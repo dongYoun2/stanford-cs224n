@@ -32,6 +32,7 @@ from nmt_model import NMT
 import torch
 import torch.nn as nn
 import torch.nn.utils
+import torch.mps
 
 #----------
 # CONSTANTS
@@ -200,6 +201,7 @@ def main():
     seed = 1234
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    torch.mps.manual_seed(seed)
     np.random.seed(seed * 13 // 7)
 
     # Load training data & vocabulary
