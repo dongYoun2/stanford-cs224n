@@ -9,3 +9,6 @@ a3/data/en-cw.txt
 a4/**/*.en
 a4/**/*.es
 a4/**/vocab.json
+
+en_es_data/
+a5_public/**/test_outputs_a4.txt
