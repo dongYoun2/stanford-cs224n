@@ -10,5 +10,9 @@ a4/**/*.en
 a4/**/*.es
 a4/**/vocab.json
 
+*.bin
+*.bin.optim
+
 en_es_data/
 a5_public/**/test_outputs_a4.txt
+a5_public/**/vocab*.json
