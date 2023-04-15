@@ -7,6 +7,8 @@ sanity_check.py: sanity checks for assignment 5
 Usage:
     sanity_check.py 1e
     sanity_check.py 1f
+    sanity_check.py 1h
+    sanity_check.py 1i
     sanity_check.py 1j
     sanity_check.py 2a
     sanity_check.py 2b
@@ -29,6 +31,8 @@ from vocab import Vocab, VocabEntry
 
 from char_decoder import CharDecoder
 from nmt_model import NMT
+from highway import Highway
+from cnn import CNN
 
 
 import torch
@@ -53,7 +57,7 @@ class DummyVocab():
         self.end_of_word = self.char2id["}"]
 
 def question_1e_sanity_check():
-    """ Sanity check for words2charindices function. 
+    """ Sanity check for words2charindices function.
     """
     print ("-"*80)
     print("Running Sanity Check for Question 1e: words2charindices()")
@@ -77,7 +81,7 @@ def question_1e_sanity_check():
     print ("-"*80)
 
 def question_1f_sanity_check():
-    """ Sanity check for pad_sents_char() function. 
+    """ Sanity check for pad_sents_char() function.
     """
     print ("-"*80)
     print("Running Sanity Check for Question 1f: Padding")
@@ -95,9 +99,85 @@ def question_1f_sanity_check():
     print("Sanity Check Passed for Question 1f: Padding!")
     print("-"*80)
 
+def question_1h_sanity_check():
+    print ("-"*80)
+    print("Running Sanity Check for Question 1h: Highyway Network")
+    print ("-"*80)
+
+    test_x_2d = torch.rand((3, 2))
+    test_x_3d = torch.rand((3, 4, 2))
+
+    W_proj = torch.tensor([[-1, 2], [3, -4]]).float()
+    b_proj = torch.tensor([[5, 3]]).float()
+    W_gate = torch.tensor([[-4, -3], [2, 1]]).float()
+    b_gate = torch.tensor([1, -2]).float()
+
+    highway_net = Highway(test_x_2d.shape[1])
+
+    highway_net.projection.weight.data = W_proj.clone()
+    highway_net.projection.bias.data = b_proj.clone()
+    highway_net.gate.weight.data = W_gate.clone()
+    highway_net.gate.bias.data = b_gate.clone()
+
+    relu = lambda x: x if x > 0 else 0
+    sigmoid = lambda x: 1 / (1 + torch.exp(-x))
+
+    X_proj = (torch.mm(test_x_2d, W_proj.T) + b_proj).apply_(relu)
+    X_gate = sigmoid(torch.mm(test_x_2d, W_gate.T) + b_gate)
+    expected_2d = X_gate * X_proj + (1 - X_gate) * test_x_2d
+
+    output_2d = highway_net(test_x_2d)
+    output_3d = highway_net(test_x_3d)
+
+    assert output_2d.shape == test_x_2d.shape
+    assert torch.allclose(output_2d, expected_2d), f"ouput of Highway network is incorrect: it should be:\n{expected_2d} but is:\n{output_2d}"
+
+    assert output_3d.shape == test_x_3d.shape
+
+    print("Sanity Check Passed for Question 1h: Highyway Network!")
+    print ("-"*80)
+
+def question_1i_sanity_check():
+    print ("-"*80)
+    print("Running Sanity Check for Question 1i: CNN")
+    print ("-"*80)
+
+    batch_size, c_in, length = 5, 2, 4
+    c_out, kernel_size = 4, 2
+
+    # test_X = torch.arange(40).reshape(batch_size, c_in, length).float()   # (B, C_in, L)
+    test_X = torch.rand((batch_size, c_in, length)) # (B, C_in, L)
+
+    fixed_W = torch.arange(1, 1 + (c_out * c_in * kernel_size)).reshape(c_out, c_in, kernel_size).float() # (C_out, C_in, K) (4, 2, 2)
+    step = 2
+    fixed_b = torch.arange(4, 4 + step * c_out, step).float()  # (C_out)
+
+    expected = torch.tensor([])
+    for i in range(length - kernel_size + 1):
+        x_window = test_X[:, :, i:i+kernel_size].unsqueeze(1)   # (B, 1, C_in, K)
+        k_out = x_window * fixed_W    # (B, C_out, C_in, K) by broadcasting
+        k_out = torch.sum(k_out, dim=(2, 3)) + fixed_b  # (B, C_out)
+        k_out = k_out.unsqueeze(2)  # (B, C_out, 1)
+        expected = torch.concat((expected, k_out), dim=2)  # (B, C_out, L - K + 1) (after current loop)
+
+    expected, _ = torch.max(expected, dim=2)    # (B, C_out)
+
+    model = CNN(test_X.shape[1], output_c=4, kernel_size=2)
+    model.conv.weight.data = fixed_W.clone()
+    model.conv.bias.data = fixed_b.clone()
+
+    output = model(test_X)
+
+    assert output.shape == expected.shape
+    assert torch.allclose(output, expected), f"ouput of CNN is incorrect: it should be:\n{expected} but is:\n{output}"
+
+
+    print("Sanity Check Passed for Question 1i: CNN!")
+    print ("-"*80)
+
 
 def question_1j_sanity_check(model):
-	""" Sanity check for model_embeddings.py 
+	""" Sanity check for model_embeddings.py
 		basic shape check
 	"""
 	print ("-"*80)
@@ -192,7 +272,7 @@ def main():
     torch.cuda.manual_seed(seed)
     np.random.seed(seed * 13 // 7)
 
-    vocab = Vocab.load('./sanity_check_en_es_data/vocab_sanity_check.json') 
+    vocab = Vocab.load('./sanity_check_en_es_data/vocab_sanity_check.json')
 
     # Create NMT Model
     model = NMT(
@@ -213,6 +293,10 @@ def main():
         question_1e_sanity_check()
     elif args['1f']:
         question_1f_sanity_check()
+    elif args['1h']:
+        question_1h_sanity_check()
+    elif args['1i']:
+        question_1i_sanity_check()
     elif args['1j']:
         question_1j_sanity_check(model)
     elif args['2a']:

@@ -24,7 +24,7 @@ def pad_sents_char(sents, char_pad_token):
     @returns sents_padded (list[list[list[int]]]): list of sentences where sentences/words shorter
         than the max length sentence/word are padded out with the appropriate pad token, such that
         each sentence in the batch now has same number of words and each word has an equal
-        number of characters
+    number of characters
         Output shape: (batch_size, max_sentence_length, max_word_length)
     """
     # Words longer than 21 characters should be truncated
@@ -41,6 +41,27 @@ def pad_sents_char(sents, char_pad_token):
     ###     You should NOT use the method `pad_sents()` below because of the way it handles
     ###     padding and unknown words.
 
+    sents_padded = []
+
+    lens = [len(s) for s in sents]
+    max_len = max(lens, default=0)
+    assert max_len > 0
+
+    for s, l in zip(sents, lens):
+
+        words_padded = []
+        for w in s:
+            w_len = len(w)
+            if w_len < max_word_length:
+                padded_w = w + [char_pad_token] * (max_word_length - w_len)
+            else:
+                padded_w = w[:max_word_length]
+
+            words_padded.append(padded_w)
+
+        pad_token = [char_pad_token] * max_word_length
+        s_padded = words_padded + [pad_token] * (max_len - l)
+        sents_padded.append(s_padded)
 
     ### END YOUR CODE
 
@@ -61,6 +82,12 @@ def pad_sents(sents, pad_token):
 
     ### COPY OVER YOUR CODE FROM ASSIGNMENT 4
 
+    lens = [len(s) for s in sents]
+    max_len = max(lens, default=0)
+    assert max_len > 0
+    for s, l in zip(sents, lens):
+        padded_s = s[:] + [pad_token] * (max_len - l)
+        sents_padded.append(padded_s)
 
     ### END YOUR CODE FROM ASSIGNMENT 4
 
