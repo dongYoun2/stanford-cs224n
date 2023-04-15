@@ -53,7 +53,7 @@ class ModelEmbeddings(nn.Module):
 
         ### END YOUR CODE
 
-    def forward(self, input):
+    def forward(self, input: torch.Tensor):
         """
         Looks up character-based CNN embeddings for the words in a batch of sentences.
         @param input: Tensor of integers of shape (sentence_length, batch_size, max_word_length) where
@@ -69,20 +69,17 @@ class ModelEmbeddings(nn.Module):
 
         ### YOUR CODE HERE for part 1j
 
-        embeds = self.char_embeddings(input).permute(1, 0, 3, 2) # (batch, sentence_len, e_char, max_word_length)
-        assert embeds.ndim == 4
-        assert embeds.shape == (input.shape[1], input.shape[0], self.char_embed_size, input.shape[2])
+        output = self.char_embeddings(input)    # (sentence_len, batch, max_word_length, e_char)
+        L_s, B, L_w, e_c= output.shape
 
-        output = torch.tensor([])
-        for t in embeds:    # (sentence_len, e_char, max_word_length) (sentence_len is the batch in the view point of cnn)
-            o = self.cnn(t) # (sentence_len, e_word)
-            o = self.highway(o) # (senttence_len, e_word)
-            o  = o.unsqueeze(1) # (senttence_len, 1, e_word)
-            output = torch.concat((output, o), dim=1)   # (sentence_len, batch, e_word) (after current loop)
+        output = output.view(L_s * B, L_w, e_c) # (sentence_len * batch, max_word_length, e_char)
 
-        output = self.dropout(output)
-        assert output.ndim == 3
-        assert output.shape == (input.shape[0], input.shape[1], self.cnn.conv.out_channels)
+        output = output.transpose(1, 2).contiguous()    # (sentence_len * batch, e_char, max_word_length)
+        output = self.cnn(output)   # (sentence_len * batch, e_word)
+        output = self.highway(output)   # (sentence_len * batch, e_word)
+
+        output = output.view(L_s, B, -1)    # (sentence_len, batch, e_word)
+        output = self.dropout(output)   # (sentence_len, batch, e_word)
 
         return output
 
