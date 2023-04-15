@@ -2,7 +2,7 @@
 a2/utils/datasets
 *.npy
 *.pickle
-__pycache__
+__pycache__/
 *.conll
 a3/data/en-cw.txt
 *pkl
@@ -16,3 +16,4 @@ a4/**/vocab.json
 en_es_data/
 a5_public/**/test_outputs_a4.txt
 a5_public/**/vocab*.json
+a5_public/**/outputs/
