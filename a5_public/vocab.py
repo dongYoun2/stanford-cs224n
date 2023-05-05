@@ -184,7 +184,7 @@ class VocabEntry(object):
     @staticmethod
     def from_corpus(corpus, size, freq_cutoff=2):
         """ Given a corpus construct a Vocab Entry.
-        @param corpus (list[str]): corpus of text produced by read_corpus function
+        @param corpus (list[list[str]]): corpus of text produced by read_corpus function
         @param size (int): # of words in vocabulary
         @param freq_cutoff (int): if word occurs n < freq_cutoff times, drop the word
         @returns vocab_entry (VocabEntry): VocabEntry instance produced from provided corpus
@@ -214,8 +214,8 @@ class Vocab(object):
     @staticmethod
     def build(src_sents, tgt_sents, vocab_size, freq_cutoff) -> 'Vocab':
         """ Build Vocabulary.
-        @param src_sents (list[str]): Source sentences provided by read_corpus() function
-        @param tgt_sents (list[str]): Target sentences provided by read_corpus() function
+        @param src_sents (list[list[str]]): Source sentences provided by read_corpus() function
+        @param tgt_sents (list[list[str]]): Target sentences provided by read_corpus() function
         @param vocab_size (int): Size of vocabulary for both source and target languages
         @param freq_cutoff (int): if word occurs n < freq_cutoff times, drop the word.
         """
